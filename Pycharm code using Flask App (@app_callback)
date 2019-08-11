@@ -1,1 +1,45 @@
 
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+
+import pandas as pd
+
+df = pd.read_csv(
+    'https://raw.githubusercontent.com/TeamProjectDataViz-V3/CA02-DataVisualisation/master/Airline.csv')
+
+def generate_table(dataframe, max_rows=10):
+    return html.Table(
+        # Header
+        [html.Tr([html.Th(col) for col in dataframe.columns])] +
+
+        # Body
+        [html.Tr([
+            html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
+        ]) for i in range(min(len(dataframe), max_rows))]
+    )
+
+app = dash.Dash()
+
+app.layout = html.Div(children=[
+    html.H4(children='World Wide  Airlines'),
+    dcc.Dropdown(id='dropdown', options=[
+        {'label': i, 'value': i} for i in df.cabin_flown.unique()
+    ], multi=True, placeholder='Filter by airline...'),
+    html.Div(id='table-container')
+])
+
+@app.callback(
+    dash.dependencies.Output('table-container', 'children'),
+    [dash.dependencies.Input('dropdown', 'value')])
+def display_table(dropdown_value):
+    if dropdown_value is None:
+        return generate_table(df)
+
+    dff = df[df.cabin_flown.str.contains('|'.join(dropdown_value))]
+    return generate_table(dff)
+
+app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"})
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
